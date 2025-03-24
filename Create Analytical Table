@@ -1,0 +1,78 @@
+WITH transaksi AS (
+    SELECT 
+        t.transaction_id,
+        t.date,
+        t.branch_id,
+        t.product_id,
+        t.customer_name,
+        t.price AS actual_price,
+        t.discount_percentage,
+        t.rating AS rating_transaksi
+    FROM `rakamin-kf-analytics-454508.kimia_farma.kf_final_transaction` AS t
+),
+produk AS (
+    SELECT 
+        p.product_id,
+        p.product_name
+    FROM `rakamin-kf-analytics-454508.kimia_farma.kf_product` AS p
+),
+cabang AS (
+    SELECT 
+        kc.branch_id,
+        kc.branch_name,
+        kc.kota,
+        kc.provinsi,
+        kc.rating AS rating_cabang
+    FROM `rakamin-kf-analytics-454508.kimia_farma.kf_kantor_cabang` AS kc
+),
+inventory AS (
+    SELECT 
+        i.branch_id,
+        i.product_id,
+    FROM `rakamin-kf-analytics-454508.kimia_farma.kf_inventory` AS i
+)
+SELECT 
+    t.transaction_id,
+    t.date,
+    t.branch_id,
+    c.branch_name,
+    c.kota,
+    c.provinsi,
+    c.rating_cabang,
+    t.customer_name,
+    t.product_id,
+    p.product_name,
+    t.actual_price,
+    t.discount_percentage,
+
+    -- Menghitung Persentase Gross Laba
+    CASE 
+        WHEN t.actual_price <= 50000 THEN 0.10
+        WHEN t.actual_price > 50000 AND t.actual_price <= 100000 THEN 0.15
+        WHEN t.actual_price > 100000 AND t.actual_price <= 300000 THEN 0.20
+        WHEN t.actual_price > 300000 AND t.actual_price <= 500000 THEN 0.25
+        ELSE 0.30
+    END AS persentase_gross_laba,
+
+    -- Menghitung Nett Sales (Harga setelah diskon)
+    t.actual_price * (1 - t.discount_percentage / 100) AS nett_sales,
+
+    -- Menghitung Nett Profit (Keuntungan setelah diskon)
+    (t.actual_price * (1 - t.discount_percentage / 100)) * 
+    CASE 
+        WHEN t.actual_price <= 50000 THEN 0.10
+        WHEN t.actual_price > 50000 AND t.actual_price <= 100000 THEN 0.15
+        WHEN t.actual_price > 100000 AND t.actual_price <= 300000 THEN 0.20
+        WHEN t.actual_price > 300000 AND t.actual_price <= 500000 THEN 0.25
+        ELSE 0.30
+    END AS nett_profit,
+
+    t.rating_transaksi,
+
+FROM transaksi AS t
+LEFT JOIN produk AS p
+    ON t.product_id = p.product_id
+LEFT JOIN cabang AS c
+    ON t.branch_id = c.branch_id
+LEFT JOIN inventory AS i
+    ON t.branch_id = i.branch_id AND t.product_id = i.product_id;
