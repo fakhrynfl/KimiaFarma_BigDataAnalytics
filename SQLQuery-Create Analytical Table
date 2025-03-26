@@ -1,3 +1,4 @@
+ -- Membuat CTE
 WITH transaksi AS (
     SELECT 
         t.transaction_id,
@@ -76,3 +77,5 @@ LEFT JOIN cabang AS c
     ON t.branch_id = c.branch_id
 LEFT JOIN inventory AS i
     ON t.branch_id = i.branch_id AND t.product_id = i.product_id;
+
+--diatas adalah sintaks penggabungan / JOIN untuk menggabungkan 4 tabel menjadi 1 tabel analisis yang dibutuhkan
